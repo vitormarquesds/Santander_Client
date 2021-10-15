@@ -1,0 +1,341 @@
+%pip install imblearn
+#Imports
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, confusion_matrix,␣
+,→classification_report
+from imblearn.under_sampling import NearMiss
+import numpy as np
+Requirement already satisfied: imblearn in
+/home/vitor/anaconda3/lib/python3.8/site-packages (0.0)
+Requirement already satisfied: imbalanced-learn in
+/home/vitor/anaconda3/lib/python3.8/site-packages (from imblearn) (0.7.0)
+Requirement already satisfied: numpy>=1.13.3 in
+/home/vitor/anaconda3/lib/python3.8/site-packages (from imbalancedlearn->imblearn) (1.19.2)
+Requirement already satisfied: scikit-learn>=0.23 in
+/home/vitor/anaconda3/lib/python3.8/site-packages (from imbalancedlearn->imblearn) (0.23.2)
+Requirement already satisfied: joblib>=0.11 in
+/home/vitor/anaconda3/lib/python3.8/site-packages (from imbalancedlearn->imblearn) (0.17.0)
+Requirement already satisfied: scipy>=0.19.1 in
+/home/vitor/anaconda3/lib/python3.8/site-packages (from imbalancedlearn->imblearn) (1.5.2)
+Requirement already satisfied: threadpoolctl>=2.0.0 in
+/home/vitor/anaconda3/lib/python3.8/site-packages (from scikitlearn>=0.23->imbalanced-learn->imblearn) (2.1.0)
+Note: you may need to restart the kernel to use updated packages.
+0.1 Data Exploration
+[2]: train = pd.read_csv("santander-customer-satisfaction/train.csv")
+test = pd.read_csv("santander-customer-satisfaction/test.csv")
+sample = pd.read_csv("santander-customer-satisfaction/sample_submission.csv")
+1
+[3]: sample
+[3]: ID TARGET
+0 2 0
+1 5 0
+2 6 0
+3 7 0
+4 9 0
+… … …
+75813 151831 0
+75814 151832 0
+75815 151833 0
+75816 151834 0
+75817 151837 0
+[75818 rows x 2 columns]
+[4]: train.head(10)
+[4]: ID var3 var15 imp_ent_var16_ult1 imp_op_var39_comer_ult1 \
+0 1 2 23 0.0 0.0
+1 3 2 34 0.0 0.0
+2 4 2 23 0.0 0.0
+3 8 2 37 0.0 195.0
+4 10 2 39 0.0 0.0
+5 13 2 23 0.0 0.0
+6 14 2 27 0.0 0.0
+7 18 2 26 0.0 0.0
+8 20 2 45 0.0 0.0
+9 23 2 25 0.0 0.0
+imp_op_var39_comer_ult3 imp_op_var40_comer_ult1 imp_op_var40_comer_ult3 \
+0 0.0 0.0 0.0
+1 0.0 0.0 0.0
+2 0.0 0.0 0.0
+3 195.0 0.0 0.0
+4 0.0 0.0 0.0
+5 0.0 0.0 0.0
+6 0.0 0.0 0.0
+7 0.0 0.0 0.0
+8 0.0 0.0 0.0
+9 0.0 0.0 0.0
+imp_op_var40_efect_ult1 imp_op_var40_efect_ult3 … \
+0 0.0 0.0 …
+1 0.0 0.0 …
+2 0.0 0.0 …
+2
+3 0.0 0.0 …
+4 0.0 0.0 …
+5 0.0 0.0 …
+6 0.0 0.0 …
+7 0.0 0.0 …
+8 0.0 0.0 …
+9 0.0 0.0 …
+saldo_medio_var33_hace2 saldo_medio_var33_hace3 saldo_medio_var33_ult1 \
+0 0.0 0.0 0.0
+1 0.0 0.0 0.0
+2 0.0 0.0 0.0
+3 0.0 0.0 0.0
+4 0.0 0.0 0.0
+5 0.0 0.0 0.0
+6 0.0 0.0 0.0
+7 0.0 0.0 0.0
+8 0.0 0.0 0.0
+9 0.0 0.0 0.0
+saldo_medio_var33_ult3 saldo_medio_var44_hace2 saldo_medio_var44_hace3 \
+0 0.0 0.0 0.0
+1 0.0 0.0 0.0
+2 0.0 0.0 0.0
+3 0.0 0.0 0.0
+4 0.0 0.0 0.0
+5 0.0 0.0 0.0
+6 0.0 0.0 0.0
+7 0.0 0.0 0.0
+8 0.0 0.0 0.0
+9 0.0 0.0 0.0
+saldo_medio_var44_ult1 saldo_medio_var44_ult3 var38 TARGET
+0 0.0 0.0 39205.170000 0
+1 0.0 0.0 49278.030000 0
+2 0.0 0.0 67333.770000 0
+3 0.0 0.0 64007.970000 0
+4 0.0 0.0 117310.979016 0
+5 0.0 0.0 87975.750000 0
+6 0.0 0.0 94956.660000 0
+7 0.0 0.0 251638.950000 0
+8 0.0 0.0 101962.020000 0
+9 0.0 0.0 356463.060000 0
+[10 rows x 371 columns]
+[5]: test.head(10)
+3
+[5]: ID var3 var15 imp_ent_var16_ult1 imp_op_var39_comer_ult1 \
+0 2 2 32 0.0 0.00
+1 5 2 35 0.0 0.00
+2 6 2 23 0.0 0.00
+3 7 2 24 0.0 0.00
+4 9 2 23 0.0 0.00
+5 11 2 43 0.0 0.00
+6 12 2 39 495.0 2334.42
+7 15 2 29 0.0 0.00
+8 16 2 53 0.0 0.00
+9 17 2 37 0.0 0.00
+imp_op_var39_comer_ult3 imp_op_var40_comer_ult1 imp_op_var40_comer_ult3 \
+0 0.00 0.0 0.0
+1 0.00 0.0 0.0
+2 0.00 0.0 0.0
+3 0.00 0.0 0.0
+4 0.00 0.0 0.0
+5 0.00 0.0 0.0
+6 4815.42 0.0 0.0
+7 0.00 0.0 0.0
+8 0.00 0.0 0.0
+9 0.00 0.0 0.0
+imp_op_var40_efect_ult1 imp_op_var40_efect_ult3 … \
+0 0.0 0.0 …
+1 0.0 0.0 …
+2 0.0 0.0 …
+3 0.0 0.0 …
+4 0.0 0.0 …
+5 0.0 0.0 …
+6 0.0 0.0 …
+7 0.0 0.0 …
+8 0.0 0.0 …
+9 0.0 0.0 …
+saldo_medio_var29_ult3 saldo_medio_var33_hace2 saldo_medio_var33_hace3 \
+0 0.0 0.00 0.0
+1 0.0 0.00 0.0
+2 0.0 0.00 0.0
+3 0.0 0.00 0.0
+4 0.0 0.00 0.0
+5 0.0 0.00 0.0
+6 0.0 7077.51 0.0
+7 0.0 0.00 0.0
+8 0.0 0.00 0.0
+9 0.0 0.00 0.0
+4
+saldo_medio_var33_ult1 saldo_medio_var33_ult3 saldo_medio_var44_hace2 \
+0 0.0 0.00 0.0
+1 0.0 0.00 0.0
+2 0.0 0.00 0.0
+3 0.0 0.00 0.0
+4 0.0 0.00 0.0
+5 0.0 0.00 0.0
+6 7599.0 7338.27 0.0
+7 0.0 0.00 0.0
+8 0.0 0.00 0.0
+9 0.0 0.00 0.0
+saldo_medio_var44_hace3 saldo_medio_var44_ult1 saldo_medio_var44_ult3 \
+0 0.0 0.0 0.0
+1 0.0 0.0 0.0
+2 0.0 0.0 0.0
+3 0.0 0.0 0.0
+4 0.0 0.0 0.0
+5 0.0 0.0 0.0
+6 0.0 0.0 0.0
+7 0.0 0.0 0.0
+8 0.0 0.0 0.0
+9 0.0 0.0 0.0
+var38
+0 40532.10
+1 45486.72
+2 46993.95
+3 187898.61
+4 73649.73
+5 53250.87
+6 58316.64
+7 46898.49
+8 110356.98
+9 41366.49
+[10 rows x 370 columns]
+[6]: train.shape
+[6]: (76020, 371)
+[7]: test.shape
+[7]: (75818, 370)
+5
+[8]: train.groupby('TARGET').size()
+[8]: TARGET
+0 73012
+1 3008
+dtype: int64
+[9]: train.isna().sum()
+[9]: ID 0
+var3 0
+var15 0
+imp_ent_var16_ult1 0
+imp_op_var39_comer_ult1 0
+..
+saldo_medio_var44_hace3 0
+saldo_medio_var44_ult1 0
+saldo_medio_var44_ult3 0
+var38 0
+TARGET 0
+Length: 371, dtype: int64
+[10]: train.isnull().sum()
+[10]: ID 0
+var3 0
+var15 0
+imp_ent_var16_ult1 0
+imp_op_var39_comer_ult1 0
+..
+saldo_medio_var44_hace3 0
+saldo_medio_var44_ult1 0
+saldo_medio_var44_ult3 0
+var38 0
+TARGET 0
+Length: 371, dtype: int64
+[11]: test.isnull().sum()
+[11]: ID 0
+var3 0
+var15 0
+imp_ent_var16_ult1 0
+imp_op_var39_comer_ult1 0
+..
+saldo_medio_var44_hace2 0
+saldo_medio_var44_hace3 0
+6
+saldo_medio_var44_ult1 0
+saldo_medio_var44_ult3 0
+var38 0
+Length: 370, dtype: int64
+[12]: test.isna().sum()
+[12]: ID 0
+var3 0
+var15 0
+imp_ent_var16_ult1 0
+imp_op_var39_comer_ult1 0
+..
+saldo_medio_var44_hace2 0
+saldo_medio_var44_hace3 0
+saldo_medio_var44_ult1 0
+saldo_medio_var44_ult3 0
+var38 0
+Length: 370, dtype: int64
+0.2 Model Test
+[13]: model = LogisticRegression()
+[14]: X = train.drop(['TARGET','ID'], axis = 1)
+Y = train['TARGET']
+[15]: X_train, X_test, Y_train, Y_test = train_test_split(X, Y, random_state = 1,␣
+,→stratify = Y)
+0.2.1 Model Train
+[16]: model.fit(X_train, Y_train)
+[16]: LogisticRegression()
+[17]: Y_predic = model.predict(X_test)
+[18]: accuracy_score(Y_test, Y_predic)
+[18]: 0.9604314654038411
+This dataset has an imbalance of the data, in this case another dataset will be created, but balanced
+7
+0.2.2 Applying Nearmiss
+[19]: nr = NearMiss()
+[20]: X, Y = nr.fit_sample(X, Y)
+0.2.3 2º Data spliting with balanced dataset
+[21]: X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size = 0.3,␣
+,→random_state = 1, stratify = Y)
+[22]: model2 = LogisticRegression()
+model2.fit(X_train, Y_train)
+/home/vitor/anaconda3/lib/python3.8/sitepackages/sklearn/linear_model/_logistic.py:762: ConvergenceWarning: lbfgs failed
+to converge (status=1):
+STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.
+Increase the number of iterations (max_iter) or scale the data as shown in:
+https://scikit-learn.org/stable/modules/preprocessing.html
+Please also refer to the documentation for alternative solver options:
+https://scikit-learn.org/stable/modules/linear_model.html#logisticregression
+n_iter_i = _check_optimize_result(
+[22]: LogisticRegression()
+[23]: Y_predic = model2.predict(X_test)
+accuracy_score(Y_test, Y_predic)
+[23]: 0.8365650969529086
+[24]: print(classification_report(Y_test, Y_predic))
+precision recall f1-score support
+0 0.79 0.91 0.85 902
+1 0.90 0.76 0.82 903
+accuracy 0.84 1805
+macro avg 0.84 0.84 0.84 1805
+weighted avg 0.84 0.84 0.84 1805
+[25]: print(pd.crosstab(Y_test, Y_predic))
+8
+col_0 0 1
+TARGET
+0 824 78
+1 217 686
+[26]: Y_predic.shape
+[26]: (1805,)
+[27]: predic = pd.DataFrame(Y_predic);
+predic
+[27]: 0
+0 0
+1 1
+2 1
+3 1
+4 0
+… ..
+1800 1
+1801 0
+1802 0
+1803 0
+1804 1
+[1805 rows x 1 columns]
+[28]: sub = pd.DataFrame();
+Y_predic
+[28]: array([0, 1, 1, …, 0, 0, 1])
+[29]: sub['ID'] = np.arange(1805);
+sub['Predict'] = predic
+[30]: sub
+[30]: ID Predict
+0 0 0
+1 1 1
+2 2 1
+3 3 1
+4 4 0
+… … …
+1800 1800 1
+1801 1801 0
+1802 1802 0
+9
+1803 1803 0
+1804 1804 1
+[1805 rows x 2 columns]
